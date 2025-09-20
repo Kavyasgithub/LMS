@@ -149,8 +149,10 @@ const AddCourse = () => {
   }, [chapters]);
 
   return (
-    <div className='h-screen overflow-scroll flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0'>
+    <div className='min-h-screen overflow-auto md:p-8 p-4'>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4 max-w-md w-full text-gray-500'>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Course</h2>
+        
         <div className='flex flex-col gap-1'>
           <p>Course Title</p>
           <input onChange={e => setCourseTitle(e.target.value)} value={courseTitle} type="text" placeholder='Type here' className='outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500' required />

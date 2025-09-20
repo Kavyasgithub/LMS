@@ -245,8 +245,8 @@ const EditCourse = () => {
   }
 
   return (
-    <div className='h-screen overflow-scroll flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0'>
-      <div className='flex items-center gap-2 mb-4'>
+    <div className='min-h-screen overflow-auto md:p-8 p-4'>
+      <div className='flex items-center gap-2 mb-6'>
         <button
           onClick={() => navigate('/educator/my-courses')}
           className='text-blue-500 hover:text-blue-600'
