@@ -63,22 +63,31 @@ export const addCourse = async (req, res) => {
 
 // Update Course
 export const updateCourse = async (req, res) => {
+    console.log('UPDATE COURSE CALLED');
+    console.log('Course ID:', req.params.courseId);
+    console.log('Educator ID:', req.auth.userId);
+    
     try {
         const { courseId } = req.params;
         const { courseData } = req.body;
         const imageFile = req.file;
         const educatorId = req.auth.userId;
 
+        console.log('Course data received:', !!courseData);
+        console.log('Image file received:', !!imageFile);
+
         // Check if the course exists and belongs to the educator
         const course = await Course.findOne({ _id: courseId, educator: educatorId });
 
         if (!course) {
+            console.log('Course not found or permission denied');
             return res.json({
                 success: false,
                 message: "Course not found or you don't have permission to edit this course"
             });
         }
 
+        console.log('Course found, updating...');
         const parsedCourseData = JSON.parse(courseData);
 
         // Update course fields
@@ -90,15 +99,18 @@ export const updateCourse = async (req, res) => {
 
         // Update thumbnail if new image is provided
         if (imageFile) {
+            console.log('Uploading new image...');
             const imageUpload = await cloudinary.uploader.upload(imageFile.path);
             course.courseThumbnail = imageUpload.secure_url;
         }
 
         await course.save();
+        console.log('Course saved successfully');
 
         res.json({ success: true, message: 'Course updated successfully' });
 
     } catch (error) {
+        console.error('Update course error:', error);
         res.json({ success: false, message: error.message });
     }
 }

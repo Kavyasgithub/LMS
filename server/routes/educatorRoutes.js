@@ -12,23 +12,23 @@ educatorRouter.get('/update-role', updateRoleToEducator)
 // Add Courses 
 educatorRouter.post('/add-course', upload.single('image'), protectEducator, addCourse)
 
-// Update Course
-educatorRouter.put('/course/:courseId', upload.single('image'), protectEducator, updateCourse)
+// Get Educator Courses 
+educatorRouter.get('/courses', protectEducator, getEducatorCourses)
 
 // Get Course for Editing
 educatorRouter.get('/course/:courseId', protectEducator, getCourseForEdit)
 
-// Get Educator Courses 
-educatorRouter.get('/courses', protectEducator, getEducatorCourses)
+// Update Course
+educatorRouter.put('/course/:courseId', upload.single('image'), protectEducator, updateCourse)
+
+// Delete Course
+educatorRouter.delete('/course/:courseId', protectEducator, deleteCourse)
 
 // Get Educator Dashboard Data
 educatorRouter.get('/dashboard', protectEducator, educatorDashboardData)
 
 // Get Educator Students Data
 educatorRouter.get('/enrolled-students', protectEducator, getEnrolledStudentsData)
-
-// Delete Course
-educatorRouter.delete('/course/:courseId', protectEducator, deleteCourse)
 
 
 export default educatorRouter;

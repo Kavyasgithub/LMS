@@ -52,10 +52,18 @@ const EditCourse = () => {
           setExistingImageUrl(course.courseThumbnail);
           setChapters(course.courseContent || []);
           
-          // Set description in Quill editor once it's initialized
-          if (quillRef.current) {
-            quillRef.current.root.innerHTML = course.courseDescription;
-          }
+            // Ensure Quill is initialized (race conditions can leave it uninitialized)
+            if (!quillRef.current && editorRef.current) {
+              quillRef.current = new Quill(editorRef.current, { theme: 'snow' });
+            }
+
+            // Set description in Quill editor once it's initialized
+            if (quillRef.current && quillRef.current.root) {
+              quillRef.current.root.innerHTML = course.courseDescription || '';
+            } else if (editorRef.current) {
+              // fallback: set raw innerHTML on the editor container so it shows for users
+              editorRef.current.innerHTML = course.courseDescription || '';
+            }
         } else {
           toast.error(data.message);
           navigate('/educator/my-courses');
@@ -174,22 +182,49 @@ const EditCourse = () => {
   const handleSubmit = async (e) => {
     try {
       e.preventDefault();
+      
+      console.log('=== FORM SUBMISSION DEBUG ===');
+      console.log('Course ID:', courseId);
+      console.log('Course Title:', courseTitle);
+      console.log('Course Price:', coursePrice);
+      console.log('Discount:', discount);
+      console.log('Chapters:', chapters);
+
+      // Safely get course description from Quill if initialized, otherwise fallback
+      let courseDescription = '';
+      if (quillRef.current && quillRef.current.root) {
+        courseDescription = quillRef.current.root.innerHTML;
+      } else if (editorRef.current) {
+        courseDescription = editorRef.current.innerHTML;
+      }
 
       const courseData = {
         courseTitle,
-        courseDescription: quillRef.current.root.innerHTML,
+        courseDescription,
         coursePrice: Number(coursePrice),
         discount: Number(discount),
         courseContent: chapters,
       }
 
+      // Client-side validation: ensure description is provided
+      if (!courseData.courseDescription || courseData.courseDescription.trim() === '') {
+        toast.error('Course description cannot be empty');
+        return;
+      }
+
+      console.log('Course data prepared:', courseData);
+
       const formData = new FormData()
       formData.append('courseData', JSON.stringify(courseData))
       if (image) {
         formData.append('image', image)
+        console.log('Image attached');
       }
 
       const token = await getToken()
+      console.log('Token obtained:', !!token);
+
+      console.log('Making API call to:', `${backendUrl}/api/educator/course/${courseId}`);
 
       const { data } = await axios.put(
         `${backendUrl}/api/educator/course/${courseId}`, 
@@ -197,24 +232,33 @@ const EditCourse = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       )
 
+      console.log('API Response:', data);
+
       if (data.success) {
         toast.success(data.message)
         navigate('/educator/my-courses')
       } else {
+        console.error('API Error:', data.message);
         toast.error(data.message)
       }
 
     } catch (error) {
+      console.error('Frontend Error:', error);
+      console.error('Error response:', error.response);
       toast.error(error.response?.data?.message || 'Failed to update course')
     }
   };
 
   useEffect(() => {
-    // Initialize Quill only once
+    // Initialize Quill on mount to avoid race with fetch
     if (!quillRef.current && editorRef.current) {
-      quillRef.current = new Quill(editorRef.current, {
-        theme: 'snow',
-      });
+      try {
+        quillRef.current = new Quill(editorRef.current, {
+          theme: 'snow',
+        });
+      } catch (err) {
+        console.error('Failed to initialize Quill:', err);
+      }
     }
   }, []);
 
