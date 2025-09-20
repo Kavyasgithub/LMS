@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -6,6 +7,7 @@ import Loading from '../../components/student/Loading';
 
 const MyCourses = () => {
 
+  const navigate = useNavigate();
   const { backendUrl, isEducator, currency, getToken } = useContext(AppContext)
 
   const [courses, setCourses] = useState(null)
@@ -99,14 +101,22 @@ const MyCourses = () => {
                       {new Date(course.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleDeleteClick(course)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                        disabled={course.enrolledStudents.length > 0}
-                        title={course.enrolledStudents.length > 0 ? "Cannot delete course with enrolled students" : "Delete course"}
-                      >
-                        {course.enrolledStudents.length > 0 ? "Cannot Delete" : "Delete"}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/educator/edit-course/${course._id}`)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(course)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                          disabled={course.enrolledStudents.length > 0}
+                          title={course.enrolledStudents.length > 0 ? "Cannot delete course with enrolled students" : "Delete course"}
+                        >
+                          {course.enrolledStudents.length > 0 ? "Cannot Delete" : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -61,6 +61,70 @@ export const addCourse = async (req, res) => {
     }
 }
 
+// Update Course
+export const updateCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { courseData } = req.body;
+        const imageFile = req.file;
+        const educatorId = req.auth.userId;
+
+        // Check if the course exists and belongs to the educator
+        const course = await Course.findOne({ _id: courseId, educator: educatorId });
+
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to edit this course"
+            });
+        }
+
+        const parsedCourseData = JSON.parse(courseData);
+
+        // Update course fields
+        course.courseTitle = parsedCourseData.courseTitle;
+        course.courseDescription = parsedCourseData.courseDescription;
+        course.coursePrice = parsedCourseData.coursePrice;
+        course.discount = parsedCourseData.discount;
+        course.courseContent = parsedCourseData.courseContent;
+
+        // Update thumbnail if new image is provided
+        if (imageFile) {
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path);
+            course.courseThumbnail = imageUpload.secure_url;
+        }
+
+        await course.save();
+
+        res.json({ success: true, message: 'Course updated successfully' });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+}
+
+// Get Single Course for Editing
+export const getCourseForEdit = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const educatorId = req.auth.userId;
+
+        const course = await Course.findOne({ _id: courseId, educator: educatorId });
+
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to edit this course"
+            });
+        }
+
+        res.json({ success: true, course });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+}
+
 // Get Educator Courses
 export const getEducatorCourses = async (req, res) => {
     try {
