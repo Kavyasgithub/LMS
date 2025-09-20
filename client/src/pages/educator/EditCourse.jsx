@@ -316,7 +316,8 @@ const EditCourse = () => {
 
         <div className='flex flex-col gap-1'>
           <p>Course Description</p>
-          <div ref={editorRef}></div>
+          {/* Quill editor container - styled so it's visible */}
+          <div ref={editorRef} className='bg-white border border-gray-300 rounded p-3 min-h-[140px]'></div>
         </div>
 
         <div className='flex items-center justify-between flex-wrap'>
