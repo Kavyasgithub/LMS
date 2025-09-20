@@ -159,3 +159,43 @@ export const getEnrolledStudentsData = async (req, res) => {
         });
     }
 };
+
+// Delete Course
+export const deleteCourse = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const educator = req.auth.userId;
+
+        // Check if the course exists and belongs to the educator
+        const course = await Course.findOne({ _id: courseId, educator });
+
+        if (!course) {
+            return res.json({
+                success: false,
+                message: "Course not found or you don't have permission to delete this course"
+            });
+        }
+
+        // Check if there are enrolled students
+        if (course.enrolledStudents.length > 0) {
+            return res.json({
+                success: false,
+                message: "Cannot delete course with enrolled students"
+            });
+        }
+
+        // Delete the course
+        await Course.findByIdAndDelete(courseId);
+
+        res.json({
+            success: true,
+            message: "Course deleted successfully"
+        });
+
+    } catch (error) {
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+};
