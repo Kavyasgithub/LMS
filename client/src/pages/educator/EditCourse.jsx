@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets';
 import { toast } from 'react-toastify'
-import Quill from 'quill';
 import uniqid from 'uniqid';
 import axios from 'axios'
 import { AppContext } from '../../context/AppContext';
@@ -12,12 +11,11 @@ const EditCourse = () => {
 
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const editorRef = useRef(null);
-  const quillRef = useRef(null);
 
   const { backendUrl, getToken } = useContext(AppContext)
 
   const [loading, setLoading] = useState(true);
+  const [courseDescription, setCourseDescription] = useState('');
   const [courseTitle, setCourseTitle] = useState('')
   const [coursePrice, setCoursePrice] = useState(0)
   const [discount, setDiscount] = useState(0)
@@ -51,19 +49,9 @@ const EditCourse = () => {
           setDiscount(course.discount);
           setExistingImageUrl(course.courseThumbnail);
           setChapters(course.courseContent || []);
-          
-            // Ensure Quill is initialized (race conditions can leave it uninitialized)
-            if (!quillRef.current && editorRef.current) {
-              quillRef.current = new Quill(editorRef.current, { theme: 'snow' });
-            }
-
-            // Set description in Quill editor once it's initialized
-            if (quillRef.current && quillRef.current.root) {
-              quillRef.current.root.innerHTML = course.courseDescription || '';
-            } else if (editorRef.current) {
-              // fallback: set raw innerHTML on the editor container so it shows for users
-              editorRef.current.innerHTML = course.courseDescription || '';
-            }
+          // Set course description in textarea
+          setCourseDescription(course.courseDescription || '');
+          console.log('Course data loaded successfully');
         } else {
           toast.error(data.message);
           navigate('/educator/my-courses');
@@ -80,7 +68,7 @@ const EditCourse = () => {
       fetchCourseData();
     }
   }, [courseId, backendUrl, getToken, navigate]);
-
+  
   const handleChapter = (action, chapterId) => {
     if (action === 'add') {
       const title = prompt('Enter Chapter Name:');
@@ -190,24 +178,20 @@ const EditCourse = () => {
       console.log('Discount:', discount);
       console.log('Chapters:', chapters);
 
-      // Safely get course description from Quill if initialized, otherwise fallback
-      let courseDescription = '';
-      if (quillRef.current && quillRef.current.root) {
-        courseDescription = quillRef.current.root.innerHTML;
-      } else if (editorRef.current) {
-        courseDescription = editorRef.current.innerHTML;
-      }
+      // Get course description from textarea
+      const description = courseDescription.trim();
+      console.log('Course Description:', description);
 
       const courseData = {
         courseTitle,
-        courseDescription,
+        courseDescription: description,
         coursePrice: Number(coursePrice),
         discount: Number(discount),
         courseContent: chapters,
       }
 
       // Client-side validation: ensure description is provided
-      if (!courseData.courseDescription || courseData.courseDescription.trim() === '') {
+      if (!description) {
         toast.error('Course description cannot be empty');
         return;
       }
@@ -249,41 +233,6 @@ const EditCourse = () => {
     }
   };
 
-  useEffect(() => {
-    // Initialize Quill on mount to avoid race with fetch
-    if (!quillRef.current && editorRef.current) {
-      try {
-        quillRef.current = new Quill(editorRef.current, {
-          theme: 'snow',
-        });
-      } catch (err) {
-        console.error('Failed to initialize Quill:', err);
-      }
-    }
-  }, []);
-
-  // Set description after Quill is initialized and course data is loaded
-  useEffect(() => {
-    if (quillRef.current && !loading && courseTitle) {
-      // Find the course data and set description
-      const fetchAndSetDescription = async () => {
-        try {
-          const token = await getToken();
-          const { data } = await axios.get(
-            `${backendUrl}/api/educator/course/${courseId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (data.success && quillRef.current) {
-            quillRef.current.root.innerHTML = data.course.courseDescription || '';
-          }
-        } catch (error) {
-          console.error('Error setting description:', error);
-        }
-      };
-      fetchAndSetDescription();
-    }
-  }, [quillRef.current, loading, courseTitle]);
-
   if (loading) {
     return <Loading />;
   }
@@ -316,8 +265,13 @@ const EditCourse = () => {
 
         <div className='flex flex-col gap-1'>
           <p>Course Description</p>
-          {/* Quill editor container - styled so it's visible */}
-          <div ref={editorRef} className='bg-white border border-gray-300 rounded p-3 min-h-[140px]'></div>
+          <textarea
+            value={courseDescription}
+            onChange={(e) => setCourseDescription(e.target.value)}
+            placeholder="Enter course description..."
+            className='bg-white border border-gray-300 rounded p-3 min-h-[140px] resize-vertical'
+            rows={6}
+          />
         </div>
 
         <div className='flex items-center justify-between flex-wrap'>

@@ -1,19 +1,16 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { assets } from '../../assets/assets';
 import { toast } from 'react-toastify'
-import Quill from 'quill';
 import uniqid from 'uniqid';
 import axios from 'axios'
 import { AppContext } from '../../context/AppContext';
 
 const AddCourse = () => {
 
-  const editorRef = useRef(null);
-  const quillRef = useRef(null);
-
   const { backendUrl, getToken } = useContext(AppContext)
 
   const [courseTitle, setCourseTitle] = useState('')
+  const [courseDescription, setCourseDescription] = useState('')
   const [coursePrice, setCoursePrice] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [image, setImage] = useState(null)
@@ -101,10 +98,16 @@ const AddCourse = () => {
 
       const courseData = {
         courseTitle,
-        courseDescription: quillRef.current.root.innerHTML,
+        courseDescription: courseDescription.trim(),
         coursePrice: Number(coursePrice),
         discount: Number(discount),
         courseContent: chapters,
+      }
+
+      // Validate description
+      if (!courseData.courseDescription) {
+        toast.error('Course description cannot be empty');
+        return;
       }
 
       const formData = new FormData()
@@ -120,11 +123,11 @@ const AddCourse = () => {
       if (data.success) {
         toast.success(data.message)
         setCourseTitle('')
+        setCourseDescription('')
         setCoursePrice(0)
         setDiscount(0)
         setImage(null)
         setChapters([])
-        quillRef.current.root.innerHTML = ""
       } else (
         toast.error(data.message)
       )
@@ -134,15 +137,6 @@ const AddCourse = () => {
     }
 
   };
-
-  useEffect(() => {
-    // Initiate Quill only once
-    if (!quillRef.current && editorRef.current) {
-      quillRef.current = new Quill(editorRef.current, {
-        theme: 'snow',
-      });
-    }
-  }, []);
 
   useEffect(() => {
     console.log(chapters);
@@ -160,7 +154,13 @@ const AddCourse = () => {
 
         <div className='flex flex-col gap-1'>
           <p>Course Description</p>
-          <div ref={editorRef} className='bg-white border border-gray-300 rounded p-3 min-h-[140px]'></div>
+          <textarea
+            value={courseDescription}
+            onChange={(e) => setCourseDescription(e.target.value)}
+            placeholder="Enter course description..."
+            className='bg-white border border-gray-300 rounded p-3 min-h-[140px] resize-vertical'
+            rows={6}
+          />
         </div>
 
         <div className='flex items-center justify-between flex-wrap'>
